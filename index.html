@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Математика 3 класс — Космические задачи</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --rope-color: #fff34f;
+      --rope-width: 6px;
+
+      --ceiling-color: #de7feb;
+      --ceiling-glow: rgba(208,139,60,.65);
+
+      --ui-bg: rgba(12, 14, 24, .58);
+      --ui-stroke: rgba(255,255,255,.14);
+      --text: #eef2ff;
+
+      --accentA: #de97e6;
+      --accentB: #bfeb96;
+
+      --good: #2ee59d;
+      --bad: #ff4d6d;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: "Roboto Condensed", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:#050712;
+      overflow:hidden;
+    }
+
+    .scene{
+      width:100vw;
+      height:100vh;
+      position:relative;
+      overflow:hidden;
+      background:#070a14;
+      isolation:isolate;
+    }
+
+    .bg{
+      position:absolute; inset:0;
+      z-index:0;
+      background:
+        radial-gradient(1200px 520px at 22% 20%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(1000px 700px at 80% 45%, rgba(32,211,255,.16), transparent 58%),
+        radial-gradient(1200px 800px at 50% 120%, rgba(255,79,216,.08), transparent 60%),
+        #070a14;
+    }
+    .bg::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:url("images/bg.png");
+      background-size:cover;
+      background-position:center;
+      opacity:1;
+      filter:saturate(1.02) contrast(1.04);
+    }
+    .vignette{
+      position:absolute; inset:0;
+      z-index:1;
+      pointer-events:none;
+      background: radial-gradient(circle at 50% 30%, rgba(0,0,0,0) 34%, rgba(0,0,0,.48) 92%);
+    }
+
+    canvas{ position:absolute; inset:0; z-index:2; }
+
+    #charGif{
+      position:absolute;
+      z-index:5;
+      width:128px;
+      height:128px;
+      left:0; top:0;
+      transform: translate(-50%, -50%);
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-drag:none;
+      will-change: transform, left, top;
+    }
+
+    .hud{
+      position:absolute;
+      top:14px; left:14px; right:14px;
+      z-index:6;
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:center;
+      gap:12px;
+      pointer-events:none;
+    }
+    .hudLeft{ justify-self:start; display:flex; gap:10px; align-items:center; }
+    .hudCenter{ justify-self:center; }
+    .hudRight{ justify-self:end; display:flex; gap:10px; align-items:center; }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      background:var(--ui-bg);
+      border:1px solid var(--ui-stroke);
+      border-radius:999px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 34px rgba(0,0,0,.22);
+      font-weight:700;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px; height:10px;
+      border-radius:50%;
+      background: linear-gradient(180deg, var(--accentA), var(--accentB));
+      box-shadow: 0 0 0 4px rgba(124,92,255,.16);
+      flex:0 0 auto;
+    }
+    .ok{ color: var(--good); }
+    .no{ color: var(--bad); }
+
+    .progressPill{
+      min-width: 320px;
+      justify-content:center;
+      gap:12px;
+    }
+    .progressWrap{
+      width:220px;
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+    .progressBar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--accentA), var(--accentB));
+      border-radius:999px;
+      transition: width .18s linear;
+    }
+
+    .panel{
+      position:absolute;
+      left:14px; right:14px;
+      bottom:14px;
+      z-index:6;
+      pointer-events:none;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+      align-items:end;
+    }
+
+    .ledgeRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      pointer-events:none;
+      padding:0 2px;
+    }
+    .ledge{
+      width:190px;
+      height:18px;
+      border-radius:12px;
+      background: rgba(12, 14, 24, .35);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+    }
+
+    /* Увеличена сама плашка с заданием */
+    .card{
+      background:var(--ui-bg);
+      border:1px solid var(--ui-stroke);
+      border-radius: 24px;
+      padding: 30px; 
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30);
+      pointer-events:auto;
+      max-width: 1200px;
+      width:100%;
+      margin:0 auto;
+    }
+
+    /* Значительно увеличен шрифт вопроса */
+    .qtext{
+      margin:0 0 24px 0;
+      font-size: 34px; 
+      line-height:1.35;
+      font-weight:700;
+      text-align:center;
+    }
+
+    .answers{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 14px;
+    }
+
+    /* Увеличены кнопки с ответами */
+    .btn{
+      width:100%;
+      border:none;
+      border-radius:16px;
+      padding: 18px 12px;
+      color:var(--text);
+      font-weight:700;
+      cursor:pointer;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: background .08s linear, border-color .08s linear, filter .08s linear, transform .04s linear;
+      text-align:center;
+      font-family: "Roboto Condensed", sans-serif;
+      letter-spacing:.2px;
+      font-size: 28px;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+    .btn:hover{
+      background: rgba(255,255,255,.11);
+      border-color: rgba(255,255,255,.18);
+    }
+    .btn:active{
+      transform: translateY(0px) scale(0.99);
+      filter: brightness(1.08);
+    }
+    .btn.correct{ background: rgba(46,229,157,.18); border-color: rgba(46,229,157,.40); }
+    .btn.wrong{ background: rgba(255,77,109,.16); border-color: rgba(255,77,109,.40); }
+    .btn:disabled{ cursor:not-allowed; opacity:.95; }
+
+    .overlay{
+      position:absolute; inset:0;
+      z-index:10;
+      display:none;
+      place-items:center;
+      padding:20px;
+      background: radial-gradient(900px 600px at 50% 30%, rgba(124,92,255,.10), rgba(0,0,0,.18));
+      backdrop-filter: blur(6px);
+    }
+    .overlay.show{ display:grid; }
+    
+    #winOverlay.show {
+      background: transparent;
+      backdrop-filter: none;
+    }
+
+    .modal{
+      width:min(720px, 92vw);
+      background: rgba(10, 12, 20, .85);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius: 40px;
+      padding:30px 40px;
+      box-shadow: 0 28px 90px rgba(0,0,0,.40);
+      text-align:center;
+    }
+
+    .modal h1{
+      margin:0 0 10px 0;
+      font-size:44px;
+      line-height:1.05;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+
+    .modal p{
+      margin:0;
+      opacity:.9;
+      line-height:1.45;
+      font-weight:400;
+      font-size:20px;
+    }
+
+    .modalActions{
+      margin-top:16px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      align-items:center;
+    }
+    .cta{
+      border:none;
+      border-radius:14px;
+      padding:12px 18px;
+      font-weight:700;
+      cursor:pointer;
+      color:#071022;
+      background: linear-gradient(180deg, #ffffff, #dfe8ff);
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
+      transition: transform .06s linear;
+      font-family: "Roboto Condensed", sans-serif;
+      letter-spacing:.2px;
+      font-size:20px;
+      min-width: 190px;
+    }
+    .cta:hover{ transform: translateY(-1px); }
+    .ctaPrimary{
+      color:#071022;
+      background: linear-gradient(180deg, rgba(222, 151, 230,1), rgba(191, 235, 150,1));
+    }
+
+    .ctaSecondary{
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.16);
+      color: var(--text);
+      box-shadow:none;
+    }
+
+    .soundBtn{
+      position:absolute;
+      top:16px; right:16px;
+      pointer-events:auto;
+      cursor:pointer;
+      user-select:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scene" id="scene">
+    <div class="bg"></div>
+    <div class="vignette"></div>
+
+    <canvas id="game"></canvas>
+
+    <img id="charGif" src="images/char.gif" alt="character" />
+
+    <div class="hud">
+      <div class="hudLeft">
+        <div class="pill">
+          <div class="dot"></div>
+          <div>Вопрос: <span id="hudQ">1</span>/<span id="hudTotal">10</span></div>
+        </div>
+      </div>
+
+      <div class="hudCenter">
+        <div class="pill progressPill" title="Прогресс">
+          <div style="font-weight:700">Прогресс</div>
+          <div class="progressWrap"><div class="progressBar" id="progBar"></div></div>
+          <div><span id="progPct">0</span>%</div>
+        </div>
+      </div>
+
+      <div class="hudRight">
+        <div class="pill">
+          <div>✅ <span class="ok" id="hudOk">0</span></div>
+          <div style="opacity:.55">|</div>
+          <div>❌ <span class="no" id="hudNo">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="ledgeRow">
+        <div class="ledge" id="ledgeLeft"></div>
+        <div class="ledge" id="ledgeRight"></div>
+      </div>
+
+      <div class="card">
+        <div class="qtext" id="qtext">...</div>
+        <div class="answers" id="answers"></div>
+      </div>
+    </div>
+
+    <div class="overlay show" id="startOverlay">
+      <div class="pill soundBtn" id="soundPill" title="Включить/выключить звук">
+        <div class="dot"></div>
+        <div>звук:<span id="soundState">вкл</span></div>
+      </div>
+
+      <div class="modal">
+        <h1>Путешествие Зипа.</h1>
+        <p>🌟 Помоги Зипу перебраться по звёздам на другую платформу. Решай задачи на движение и составляй формулы!</p>
+        <div class="modalActions">
+          <button class="cta ctaPrimary" id="startBtn">Начать</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overOverlay">
+      <div class="modal">
+        <h1>Игра окончена</h1>
+        <p id="overStats">Статистика</p>
+        <div class="modalActions">
+          <button class="cta ctaPrimary" id="restartBtn">Начать заново</button>
+          <button class="cta ctaSecondary" id="goBackBtn">Вернуться назад</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="winOverlay">
+      <div class="modal">
+        <h1>Отлично!</h1>
+        <p id="winStats">Статистика</p>
+        <div class="modalActions">
+          <button class="cta ctaPrimary" id="playAgainBtn">Играть ещё раз</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const ALL_QUESTIONS = [
+    // Буквенные выражения (только движение)
+    { q: "Космический корабль пролетел n км за k часов. Чему равна его скорость?", a: ["n : k", "n · k", "k : n"], correct: 0 },
+    { q: "Зип летел a часов со скоростью b км/ч. Какое расстояние он пролетел?", a: ["a · b", "a + b", "b : a"], correct: 0 },
+    { q: "Ракета пролетела k км со скоростью f км/с. Сколько времени она летела?", a: ["k : f", "k · f", "f : k"], correct: 0 },
+    { q: "Крейсер пролетел x км за 5 мин, а шлюпка — за 6 мин. На сколько скорость крейсера больше?", a: ["x : 5 − x : 6", "x : 6 − x : 5", "x : 5 + x : 6"], correct: 0 },
+    { q: "Комета летела t секунд со скоростью 9 км/с. Какое расстояние она пролетела?", a: ["9 · t", "9 + t", "t : 9"], correct: 0 },
+    { q: "Спутник пролетел d километров за 4 часа. Какова его скорость?", a: ["d : 4", "d · 4", "4 : d"], correct: 0 },
+    { q: "Звездный патруль летел со скоростью e км/с в течение 8 секунд. Какой путь он проделал?", a: ["e · 8", "e : 8", "8 : e"], correct: 0 },
+    { q: "Метеорит пролетел 100 км со скоростью c км/с. За какое время он преодолел этот путь?", a: ["100 : c", "c : 100", "100 · c"], correct: 0 },
+    { q: "Первая ракета пролетела y км за 3 ч, а вторая — за 4 ч. На сколько скорость первой больше?", a: ["y : 3 − y : 4", "y : 4 − y : 3", "y : 3 + y : 4"], correct: 0 },
+    { q: "Марсоход проехал S метров со скоростью 2 м/с. Какое время он был в пути?", a: ["S : 2", "2 : S", "S · 2"], correct: 0 },
+    
+    // Числовые вычисления (только движение)
+    { q: "Почтовый дрон пролетел 120 км за 2 часа. Чему равна его скорость?", a: ["60 км/ч", "240 км/ч", "122 км/ч"], correct: 0 },
+    { q: "Метеорит летит со скоростью 6 км/с. За какое время он пролетит 360 км?", a: ["60 с", "216 с", "36 с"], correct: 0 },
+    { q: "Космонавт ехал на луноходе со скоростью 8 км/ч. Какое расстояние он проедет за 4 часа?", a: ["32 км", "12 км", "2 км"], correct: 0 },
+    { q: "Звездолёт летит со скоростью 5 км/с. Какое расстояние он пролетит за 4 секунды?", a: ["20 км", "9 км", "1 км"], correct: 0 },
+    { q: "Ракета пролетела 30 км за 5 секунд. Какова скорость ракеты?", a: ["6 км/с", "25 км/с", "35 км/с"], correct: 0 },
+    { q: "Космический зонд летит со скоростью 8 км/с. За какое время он пролетит 400 км?", a: ["50 с", "80 с", "40 с"], correct: 0 },
+    { q: "Спутник связи пролетает 80 км за 8 секунд. Какова его скорость?", a: ["10 км/с", "640 км/с", "72 км/с"], correct: 0 },
+    { q: "Космический паром летел 3 часа со скоростью 200 км/ч. Какое расстояние он преодолел?", a: ["600 км", "203 км", "60 км"], correct: 0 },
+    { q: "Зонд пролетел 280 км за 4 секунды. Какова скорость зонда?", a: ["70 км/с", "284 км/с", "32 км/с"], correct: 0 },
+    { q: "Сигнал с Земли прошел 81 км за 9 секунд. Какова его скорость?", a: ["9 км/с", "72 км/с", "90 км/с"], correct: 0 }
+  ];
+
+    let RUN_QUESTIONS = [];
+
+    const scene = document.getElementById("scene");
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const charGif = document.getElementById("charGif");
+
+    const startOverlay = document.getElementById("startOverlay");
+    const overOverlay  = document.getElementById("overOverlay");
+    const winOverlay   = document.getElementById("winOverlay");
+
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const goBackBtn = document.getElementById("goBackBtn");
+
+    const qtext = document.getElementById("qtext");
+    const answersEl = document.getElementById("answers");
+
+    const hudQ = document.getElementById("hudQ");
+    const hudTotal = document.getElementById("hudTotal");
+    const hudOk = document.getElementById("hudOk");
+    const hudNo = document.getElementById("hudNo");
+    const progPct = document.getElementById("progPct");
+    const progBar = document.getElementById("progBar");
+
+    const overStats = document.getElementById("overStats");
+    const winStats = document.getElementById("winStats");
+
+    const soundPill = document.getElementById("soundPill");
+    const soundState = document.getElementById("soundState");
+
+    const ledgeLeftEl = document.getElementById("ledgeLeft");
+    const ledgeRightEl = document.getElementById("ledgeRight");
+
+    const imgElem = new Image();
+    imgElem.src = "images/element.png";
+
+    const STATE = {
+      mode: "start",
+      i: 0,
+      ok: 0,
+      no: 0,
+      locked: false,
+      sound: true
+    };
+
+    const S = {
+      w: 0, h: 0,
+      ceilingY: 0,
+      ledgeY: 0,
+      ledgeW: 190,
+      ledgeH: 18,
+      ledgeLeftX: 0,
+      ledgeRightX: 0,
+      anchors: [],
+      ropeLen: 260
+    };
+
+    const character = {
+      x: 0, y: 0,
+      w: 128, h: 128,
+      attached: false,
+      ropeIndex: 0,
+      angle: 0,
+      state: "stand",
+      t: 0,
+      from: null,
+      to: null,
+      vy: 0,
+      transferLift: 0,
+      transferStartAngle: 0,
+      transferEndAngle: 0,
+      transferAttachIndex: null,
+      transferAfter: null
+    };
+
+    let confetti = [];
+
+    function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+    function lerp(a,b,t){ return a + (b-a)*t; }
+    function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    function easeInOutCubic(t){
+      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+    }
+
+    function shuffleArray(arr){
+      const newArr = [...arr];
+      for(let i = newArr.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+      }
+      return newArr;
+    }
+
+    function buildRunQuestions(){
+      let selectedQuestions = shuffleArray(ALL_QUESTIONS).slice(0, 10);
+
+      const run = selectedQuestions.map(q => ({
+        q: q.q,
+        a: [...q.a],
+        correct: q.correct
+      }));
+
+      for(const item of run){
+        const pairs = item.a.map((txt, idx) => ({ txt, idx }));
+        const shuffledPairs = shuffleArray(pairs);
+        item.a = shuffledPairs.map(p => p.txt);
+        item.correct = shuffledPairs.findIndex(p => p.idx === item.correct);
+      }
+
+      return run;
+    }
+
+    function resize(){
+      const rect = scene.getBoundingClientRect();
+      canvas.width  = Math.floor(rect.width * devicePixelRatio);
+      canvas.height = Math.floor(rect.height * devicePixelRatio);
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+      ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+
+      S.w = rect.width;
+      S.h = rect.height;
+
+      S.ceilingY = Math.floor(S.h * 0.14);
+
+      const sceneRect = scene.getBoundingClientRect();
+      const ledgeRect = ledgeLeftEl.getBoundingClientRect();
+      S.ledgeY = Math.floor(ledgeRect.top - sceneRect.top);
+      S.ledgeW = Math.floor(ledgeRect.width);
+      S.ledgeH = Math.floor(ledgeRect.height);
+
+      const ledgeLeftRect = ledgeLeftEl.getBoundingClientRect();
+      const ledgeRightRect = ledgeRightEl.getBoundingClientRect();
+      S.ledgeLeftX = Math.floor(ledgeLeftRect.left - sceneRect.left);
+      S.ledgeRightX = Math.floor(ledgeRightRect.left - sceneRect.left);
+
+      S.ropeLen = clamp(Math.floor(S.h * 0.34), 210, 360);
+
+      buildAnchors();
+
+      if(STATE.mode !== "play") placeCharacterOnLeftLedge();
+      updateHUD();
+      syncCharDom();
+    }
+
+    function buildAnchors(){
+      const n = RUN_QUESTIONS.length;
+      if (n === 0) return;
+      S.anchors = [];
+      const startX = S.ledgeLeftX + S.ledgeW * 0.78;
+      const endX   = S.ledgeRightX + S.ledgeW * 0.22;
+      for(let k=0;k<n;k++){
+        const t = (n===1)?0:(k/(n-1));
+        S.anchors.push({ x: Math.floor(lerp(startX, endX, t)), y: S.ceilingY });
+      }
+    }
+
+    function ropeEndPos(index, angle){
+      const a = S.anchors[index];
+      return { x: a.x + Math.sin(angle) * S.ropeLen, y: a.y + Math.cos(angle) * S.ropeLen };
+    }
+
+    function standYOnLedge(){
+      const feetOffset = 0.50;
+      return (S.ledgeY + S.ledgeH) - character.h * feetOffset;
+    }
+
+    function placeCharacterOnLeftLedge(){
+      character.attached = false;
+      character.state = "stand";
+      character.x = S.ledgeLeftX + S.ledgeW * 0.25;
+      character.y = standYOnLedge();
+      character.vy = 0;
+      character.angle = 0;
+      character.ropeIndex = 0;
+      syncCharDom();
+    }
+
+    function updateHUD(){
+      hudTotal.textContent = RUN_QUESTIONS.length;
+      hudQ.textContent = clamp(STATE.i + 1, 1, RUN_QUESTIONS.length);
+      hudOk.textContent = STATE.ok;
+      hudNo.textContent = STATE.no;
+
+      const pct = RUN_QUESTIONS.length > 0 ? Math.round((STATE.i / RUN_QUESTIONS.length) * 100) : 0;
+      progPct.textContent = pct;
+      progBar.style.width = pct + "%";
+    }
+
+    function setAnswersEnabled(enabled){
+      [...answersEl.querySelectorAll("button")].forEach(b => b.disabled = !enabled);
+    }
+
+    let audioCtx = null;
+    function bleep(freq=440, dur=0.08, type="sine", gain=0.03){
+      if(!STATE.sound) return;
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const t0 = audioCtx.currentTime;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t0);
+        g.gain.setValueAtTime(gain, t0);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t0); o.stop(t0 + dur);
+      } catch(e){}
+    }
+
+    function updateSoundUI(){
+      soundState.textContent = STATE.sound ? "вкл" : "выкл";
+      soundPill.style.opacity = STATE.sound ? "1" : ".78";
+    }
+
+    function renderQuestion(){
+      const item = RUN_QUESTIONS[STATE.i];
+      if(!item) return;
+      qtext.textContent = item.q;
+      answersEl.innerHTML = "";
+
+      item.a.forEach((txt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.textContent = txt;
+
+        const handler = (ev) => {
+          ev.preventDefault();
+          chooseAnswer(idx);
+        };
+        btn.addEventListener("pointerdown", handler, { passive:false });
+
+        answersEl.appendChild(btn);
+      });
+
+      updateHUD();
+    }
+
+    function chooseAnswer(idx){
+      if(STATE.mode !== "play") return;
+      if(STATE.locked) return;
+      STATE.locked = true;
+      setAnswersEnabled(false);
+
+      const item = RUN_QUESTIONS[STATE.i];
+      const correct = (idx === item.correct);
+
+      const btns = [...answersEl.querySelectorAll("button")];
+      for(let j=0;j<btns.length;j++){
+        const b = btns[j];
+        if(j === item.correct) b.classList.add("correct");
+        if(j === idx && !correct) b.classList.add("wrong");
+      }
+
+      if(correct){
+        STATE.ok++;
+        bleep(740, 0.06, "triangle", 0.04);
+        bleep(988, 0.06, "triangle", 0.03);
+        onCorrect();
+      } else {
+        STATE.no++;
+        bleep(220, 0.10, "sawtooth", 0.035);
+        bleep(165, 0.10, "sawtooth", 0.03);
+        onWrong();
+      }
+      updateHUD();
+    }
+
+    function startTransferToRope(attachIndex, after){
+      const from = { x: character.x, y: character.y };
+      const endAngle = -0.10;
+      const to = ropeEndPos(attachIndex, endAngle);
+
+      character.state = "transfer";
+      character.t = 0;
+      character.from = from;
+      character.to = to;
+      character.attached = false;
+
+      character.transferAttachIndex = attachIndex;
+      character.transferAfter = after || null;
+
+      character.transferLift = clamp(S.h * 0.028, 12, 28);
+      character.transferStartAngle = character.angle || 0;
+      character.transferEndAngle = endAngle;
+    }
+
+    function startTransferToPlatform(platformPoint, after){
+      character.state = "transfer";
+      character.t = 0;
+      character.from = { x: character.x, y: character.y };
+      character.to = { x: platformPoint.x, y: platformPoint.y };
+      character.attached = false;
+
+      character.transferAttachIndex = null;
+      character.transferAfter = after || null;
+
+      character.transferLift = clamp(S.h * 0.022, 10, 22);
+      character.transferStartAngle = character.angle || 0;
+      character.transferEndAngle = 0;
+    }
+
+    function finishTransfer(){
+      if(character.transferAttachIndex !== null){
+        character.ropeIndex = character.transferAttachIndex;
+        character.attached = true;
+        character.state = "swing";
+        character.angle = character.transferEndAngle;
+        const end = ropeEndPos(character.ropeIndex, character.angle);
+        character.x = end.x; character.y = end.y;
+      } else {
+        character.attached = false;
+        character.state = "stand";
+        character.angle = 0;
+        character.x = character.to.x;
+        character.y = character.to.y;
+      }
+
+      const cb = character.transferAfter;
+      character.transferAfter = null;
+      character.transferAttachIndex = null;
+      if(cb) cb();
+    }
+
+    function onCorrect(){
+      const last = (STATE.i >= RUN_QUESTIONS.length - 1);
+
+      if(character.state === "stand" && !character.attached){
+        startTransferToRope(0, () => {
+          STATE.i++;
+          renderQuestion();
+          STATE.locked = false;
+          setAnswersEnabled(true);
+        });
+        return;
+      }
+
+      if(!last){
+        const nextIdx = clamp(character.ropeIndex + 1, 0, RUN_QUESTIONS.length - 1);
+        startTransferToRope(nextIdx, () => {
+          STATE.i++;
+          renderQuestion();
+          STATE.locked = false;
+          setAnswersEnabled(true);
+        });
+        return;
+      }
+
+      const lastIndex = RUN_QUESTIONS.length - 1;
+
+      const platform = {
+        x: S.ledgeRightX + S.ledgeW * 0.75,
+        y: standYOnLedge()
+      };
+
+      const goWin = () => {
+        STATE.i = RUN_QUESTIONS.length;
+        updateHUD();
+        win();
+      };
+      const toPlatform = () => startTransferToPlatform(platform, goWin);
+
+      const needLastRope = !(character.attached && character.state === "swing" && character.ropeIndex === lastIndex);
+
+      if(needLastRope){
+        startTransferToRope(lastIndex, toPlatform);
+      } else {
+        toPlatform();
+      }
+    }
+
+    function onWrong(){
+      character.attached = false;
+      character.state = "fall";
+      character.vy = 0;
+      setTimeout(() => gameOver(), 520);
+    }
+
+    function startGame(){
+      RUN_QUESTIONS = buildRunQuestions();
+
+      STATE.mode = "play";
+      STATE.i = 0;
+      STATE.ok = 0;
+      STATE.no = 0;
+      STATE.locked = false;
+
+      startOverlay.classList.remove("show");
+      overOverlay.classList.remove("show");
+      winOverlay.classList.remove("show");
+
+      confetti = [];
+      resize();
+      placeCharacterOnLeftLedge();
+      renderQuestion();
+      setAnswersEnabled(true);
+    }
+
+    function goBackToLastQuestion(){
+      overOverlay.classList.remove("show");
+      STATE.mode = "play";
+      STATE.locked = false;
+      setAnswersEnabled(true);
+
+      if(STATE.i <= 0){
+        placeCharacterOnLeftLedge();
+      } else {
+        const idx = clamp(STATE.i - 1, 0, RUN_QUESTIONS.length - 1);
+        character.ropeIndex = idx;
+        character.attached = true;
+        character.state = "swing";
+        character.angle = -0.10;
+        const end = ropeEndPos(idx, character.angle);
+        character.x = end.x;
+        character.y = end.y;
+        syncCharDom();
+      }
+      renderQuestion();
+    }
+
+    function gameOver(){
+      STATE.mode = "over";
+      overOverlay.classList.add("show");
+      overStats.textContent = `Правильно: ${STATE.ok} • Ошибок: ${STATE.no} • Вопрос: ${STATE.i+1}/${RUN_QUESTIONS.length}`;
+      STATE.locked = false;
+      setAnswersEnabled(false);
+    }
+
+    function win(){
+      STATE.mode = "win";
+      winOverlay.classList.add("show");
+      winStats.textContent = `Результат: ✅ ${STATE.ok} • ❌ ${STATE.no} • Всего: ${RUN_QUESTIONS.length}`;
+      STATE.locked = false;
+      setAnswersEnabled(false);
+      spawnConfetti(360, S.w * 0.5, S.ceilingY + 40);
+    }
+
+    function spawnConfetti(count, x, y){
+      for(let i=0;i<count;i++){
+        const a = Math.random()*Math.PI*2;
+        const sp = 1.2 + Math.random()*6.8;
+        confetti.push({
+          x: x + (Math.random()*14-7),
+          y: y + (Math.random()*14-7),
+          vx: Math.cos(a)*sp,
+          vy: Math.sin(a)*sp - (3.0+Math.random()*2.8),
+          r: 2 + Math.random()*4,
+          rot: Math.random()*Math.PI*2,
+          vr: (Math.random()*0.28 - 0.14),
+          life: 1.0,
+          hue: Math.floor(180 + Math.random()*160)
+        });
+      }
+    }
+
+    function updateConfetti(dt){
+      for(const p of confetti){
+        p.vy += 9.2 * dt;
+        p.x += p.vx * 60 * dt;
+        p.y += p.vy * 60 * dt;
+        p.rot += p.vr * 60 * dt;
+        p.life -= 0.45 * dt;
+      }
+      confetti = confetti.filter(p => p.life > 0 && p.y < S.h + 50);
+    }
+
+    function drawConfetti(){
+      for(const p of confetti){
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = clamp(p.life, 0, 1);
+        ctx.fillStyle = `hsl(${p.hue} 95% 65%)`;
+        ctx.fillRect(-p.r, -p.r*0.6, p.r*2.2, p.r*1.2);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function syncCharDom(){
+      charGif.style.left = character.x + "px";
+      charGif.style.top  = character.y + "px";
+
+      let rot = 0;
+      if(STATE.mode==="play" && character.state==="swing" && character.attached){
+        rot = character.angle * 0.18;
+      } else if(STATE.mode==="play" && character.state==="transfer"){
+        const dx = (character.to?.x ?? character.x) - (character.from?.x ?? character.x);
+        rot = clamp(dx / 900, -0.14, 0.14);
+      }
+      charGif.style.transform = `translate(-50%, -50%) rotate(${rot}rad)`;
+    }
+
+    function drawCeiling(){
+      const y = S.ceilingY;
+      ctx.save();
+
+      ctx.strokeStyle = cssVar("--ceiling-color");
+      ctx.lineWidth = 8;
+      ctx.shadowColor = cssVar("--ceiling-glow");
+      ctx.shadowBlur = 24;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(S.w, y);
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255, 220, 175, .55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(S.w, y);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawRope(i){
+      const a = S.anchors[i];
+
+      let end;
+      if(STATE.mode === "play" && character.attached && character.state === "swing" && i === character.ropeIndex){
+        end = { x: character.x, y: character.y };
+      } else {
+        const t = performance.now()*0.001;
+        const ang = Math.sin(t*0.45 + i*0.9) * 0.045;
+        end = ropeEndPos(i, ang);
+      }
+
+      ctx.save();
+      ctx.strokeStyle = cssVar("--rope-color");
+      ctx.lineWidth = parseFloat(cssVar("--rope-width")) || 6;
+      ctx.lineCap = "round";
+      ctx.shadowColor = cssVar("--rope-color");
+      ctx.shadowBlur = 10;
+
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      const midx = (a.x + end.x) / 2;
+      const midy = (a.y + end.y) / 2 + 18;
+      ctx.quadraticCurveTo(midx, midy, end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+
+      const s = 68;
+      ctx.save();
+      ctx.translate(end.x, end.y);
+      if(imgElem.complete && imgElem.naturalWidth > 0){
+        ctx.drawImage(imgElem, -s/2, -s/2, s, s);
+      } else {
+        ctx.fillStyle = "rgba(255,255,255,.9)";
+        ctx.beginPath();
+        ctx.arc(0,0, s*0.26, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, w, h, r){
+      r = Math.min(r, w/2, h/2);
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y, x+w, y+h, r);
+      ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r);
+      ctx.arcTo(x, y, x+w, y, r);
+      ctx.closePath();
+    }
+
+    function drawLedge(x, y, w, h){
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.25)";
+      ctx.beginPath();
+      roundRect(ctx, x, y+8, w, h, 10);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(12, 14, 24, .34)";
+      ctx.strokeStyle = "rgba(255,255,255,.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      roundRect(ctx, x, y, w, h, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.globalAlpha = .26;
+      ctx.fillStyle = "rgba(255,255,255,.20)";
+      ctx.beginPath();
+      roundRect(ctx, x+8, y+3, w-16, 5, 8);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    let lastT = performance.now();
+    function update(dt){
+      if(STATE.mode === "play"){
+        if(character.state === "swing" && character.attached){
+          const t = performance.now() * 0.001;
+          const base = -0.10;
+          const amp  = 0.06;
+          const spd  = 0.50;
+          character.angle = base + Math.sin(t * spd + character.ropeIndex * 0.85) * amp;
+          const end = ropeEndPos(character.ropeIndex, character.angle);
+          character.x = end.x;
+          character.y = end.y;
+        }
+
+        if(character.state === "transfer"){
+          character.t += dt;
+          const T = 0.48;
+          const u = clamp(character.t / T, 0, 1);
+          const e = easeInOutCubic(u);
+
+          character.x = lerp(character.from.x, character.to.x, e);
+          character.y = lerp(character.from.y, character.to.y, e);
+
+          const lift = Math.sin(u * Math.PI) * character.transferLift;
+          character.y -= lift;
+
+          character.angle = lerp(character.transferStartAngle, character.transferEndAngle, e);
+
+          if(u >= 1){
+            character.x = character.to.x;
+            character.y = character.to.y;
+            finishTransfer();
+          }
+        }
+
+        if(character.state === "fall"){
+          character.vy += 18 * dt;
+          character.y += character.vy * 60 * dt;
+          if(character.y > S.h + 220) character.y = S.h + 220;
+        }
+      }
+
+      updateConfetti(dt);
+      syncCharDom();
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,S.w,S.h);
+      drawCeiling();
+      drawLedge(S.ledgeLeftX,  S.ledgeY, S.ledgeW, S.ledgeH);
+      drawLedge(S.ledgeRightX, S.ledgeY, S.ledgeW, S.ledgeH);
+      for(let i=0;i<S.anchors.length;i++) drawRope(i);
+      drawConfetti();
+    }
+
+    function loop(now){
+      const dt = clamp((now - lastT) / 1000, 0, 0.033);
+      lastT = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", resize);
+
+    soundPill.addEventListener("click", () => {
+      STATE.sound = !STATE.sound;
+      updateSoundUI();
+      if(STATE.sound) bleep(880,0.06,"triangle",0.03);
+    });
+
+    startBtn.addEventListener("click", () => {
+      bleep(660, 0.03, "sine", 0.0001);
+      startGame();
+    });
+
+    restartBtn.addEventListener("click", startGame);
+    playAgainBtn.addEventListener("click", startGame);
+    goBackBtn.addEventListener("click", goBackToLastQuestion);
+
+    updateSoundUI();
+    RUN_QUESTIONS = buildRunQuestions(); 
+    resize();
+    renderQuestion();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
